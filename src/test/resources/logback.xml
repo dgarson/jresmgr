@@ -1,0 +1,36 @@
+<!-- Logging Configuration File for Logback -->
+<configuration>
+	<appender name="S3APPENDER" class="com.mprew.aws.logging.S3RollingFileAppender">
+	  	<file>logs/agent.log</file>
+	  	<directoryPath>logs/</directoryPath>
+	  	<accessKey>AKIAISQE2DPGWLKNP33A</accessKey>
+	  	<secretKey>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</secretKey>
+	  	<bucketName>logs.onlineconvergence.com</bucketName>
+	  	<encoder>
+	  		<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n</pattern>
+	  	</encoder>
+	  	<rollingPolicy class="com.mprew.aws.logging.S3TimeBasedRollingPolicy">
+	  		<fileNamePattern>logs/agent-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+	  		<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+	  			<maxFileSize>16KB</maxFileSize>
+	  		</timeBasedFileNamingAndTriggeringPolicy>
+	  	</rollingPolicy>
+	</appender>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="org.apache.cxf" level="INFO" />
+	<logger name="org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper" level="ERROR" />
+	<logger name="org.apache.cxf.phase.PhaseInterceptorChain" level="INFO" />
+	<logger name="org.apache.cxf.interceptor" level="INFO" />
+	<logger name="org.springframework" level="INFO" />
+
+	<root level="INFO">
+		<appender-ref ref="S3APPENDER" />
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>

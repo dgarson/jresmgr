@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Import JMX beans -->
+	<import resource="classpath:com/mprew/shared/jmx/jmx.xml" />
+
+	<!-- Configurer (replaces %%...%% with system props) -->
+	<bean id="serverPropertyPlaceholder"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>
+					classpath:ec2-commons.properties
+				</value>
+			</list>
+		</property>	
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
+		<property name="placeholderPrefix" value="%%" />
+		<property name="placeholderSuffix" value="%%" />
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+	</bean>
+
+	<!-- checks for the @Required annotations -->
+	<bean id="requiredAnnotationBeanPostProcessor" class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
+
+	<!-- Define the ManagedServer instance -->
+	<bean id="managedServer" class="com.mprew.ec2.commons.server.ManagedServer">
+		<property name="port" value="%%managedServer.port%%" />
+	</bean>
+	
+	<!-- Define the ResourceManager instance -->
+	<bean id="resourceManager" class="com.mprew.ec2.resources.ResourceManager"
+		  init-method="doStartup"/>
+		  
+
+	<!-- Define the 'status' ManagedContext -->
+	<bean id="statusContext" class="com.mprew.ec2.commons.server.WebContext">
+		<property name="contextPath" value="%%managedServer.status.contextPath%%" />
+		<property name="name" value="status" />
+		<property name="type" value="CXF" />
+	</bean>
+	
+	<!-- Define the 'secure' ManagedContext -->
+	<bean id="securedContext" class="com.mprew.ec2.commons.server.WebContext">
+		<property name="contextPath" value="%%managedServer.secure.contextPath%%"/>
+		<property name="name" value="secured"/>
+		<property name="type" value="CXF"/>
+		<property name="configurator" ref="securedConfigurator"/>
+	</bean>
+	
+	<!-- Define the 'secured' configurator -->
+	<bean id="securedConfigurator" class="com.mprew.ec2.commons.server.cxf.SecuredCXFConfigurator">
+		<property name="username" value="%%managedServer.secure.username%%"/>
+		<property name="password" value="%%managedServer.secure.password%%"/>
+	</bean>
+
+	<!-- Define the HeartBeatService -->
+	<bean id="heartbeatService" class="com.mprew.ec2.commons.services.impl.HeartBeatServiceImpl" />
+	
+	<!-- Define the ServerControlService -->
+	<bean id="controlService" class="com.mprew.ec2.commons.services.impl.ServerControlServiceImpl">
+		<property name="server" ref="managedServer"/>
+	</bean>
+
+</beans>

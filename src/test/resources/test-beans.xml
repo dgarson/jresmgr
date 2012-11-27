@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	
+	<bean id="resourceA" class="com.mprew.resources.testing.ResourceA"/>
+	
+	<bean id="resourceOne" class="com.mprew.resources.testing.ResourceOne"/>
+	
+	<bean id="resourceZero" class="com.mprew.resources.testing.ResourceZero"/>
+	
+	<bean id="isolatedRes" class="com.mprew.resources.testing.IsolatedResource"/>
+	
+	<bean id="resourceDepZero" class="com.mprew.resources.testing.ResourceDepZero"/>
+	
+	<bean id="resourceZ" class="com.mprew.resources.testing.ResourceZ"/>
+	
+	<bean id="resourceMgr" class="com.mprew.resources.ResourceManager"/>
+</beans>
