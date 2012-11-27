@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.mprew.ec2.commons.util.StringUtils;
 import com.mprew.ec2.resources.startup.DependencyConditionException;
 import com.mprew.ec2.resources.startup.DependencyException;
 import com.mprew.ec2.resources.validation.Validatable;
@@ -74,7 +73,7 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 		
 		noun = getActionName(true);
 		verb = getActionName(false);
-		ptVerb = StringUtils.pastTense(verb);
+		ptVerb = ResourceUtils.pastTense(verb);
 	}
 	
 	/**

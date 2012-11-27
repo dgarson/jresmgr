@@ -54,6 +54,8 @@ public class ResourceManagerTests {
 		
 		resmgr.stopAsync("managedResC");
 		// resmgr.unregisterResource("managedResC");
+		
+		Thread.sleep(1000);
 	}
 	
 	@After

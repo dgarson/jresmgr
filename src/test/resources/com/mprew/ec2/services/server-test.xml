@@ -35,17 +35,13 @@
 		  
 
 	<!-- Define the 'status' ManagedContext -->
-	<bean id="statusContext" class="com.mprew.ec2.commons.server.WebContext">
+	<bean id="statusContext" class="com.mprew.ec2.commons.server.ManagedCXFContext">
 		<property name="contextPath" value="%%managedServer.status.contextPath%%" />
-		<property name="name" value="status" />
-		<property name="type" value="CXF" />
 	</bean>
 	
 	<!-- Define the 'secure' ManagedContext -->
-	<bean id="securedContext" class="com.mprew.ec2.commons.server.WebContext">
+	<bean id="securedContext" class="com.mprew.ec2.commons.server.ManagedCXFContext">
 		<property name="contextPath" value="%%managedServer.secure.contextPath%%"/>
-		<property name="name" value="secured"/>
-		<property name="type" value="CXF"/>
 		<property name="configurator" ref="securedConfigurator"/>
 	</bean>
 	
@@ -56,10 +52,13 @@
 	</bean>
 
 	<!-- Define the HeartBeatService -->
-	<bean id="heartbeatService" class="com.mprew.ec2.commons.services.impl.HeartBeatServiceImpl" />
+	<bean id="heartbeatService" class="com.mprew.ec2.commons.services.impl.HeartBeatServiceImpl">
+		<property name="managedContext" ref="statusContext"/>
+	</bean>
 	
 	<!-- Define the ServerControlService -->
 	<bean id="controlService" class="com.mprew.ec2.commons.services.impl.ServerControlServiceImpl">
+		<property name="managedContext" ref="securedContext"/>
 		<property name="server" ref="managedServer"/>
 	</bean>
 

@@ -35,6 +35,11 @@ class PublishResourcesAction extends AbstractResourceAction {
 	}
 	
 	@Override
+	protected void finishedAction() {
+		changeSystemState(ResourceState.RUNNING);
+	}
+	
+	@Override
 	protected void skippedResource(final ResourceInfo skipped) {
 		if (skipped.getState().isNewStateOk(ResourceState.PUBLISHING)) {
 			Callable<Boolean> job = new Callable<Boolean>() {

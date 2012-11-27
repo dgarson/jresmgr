@@ -18,15 +18,15 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
 import com.mprew.ec2.resources.ResourceManager.Injections;
 import com.mprew.ec2.resources.action.ResourceAction;
-import com.mprew.ec2.resources.annotation.ContextResource;
 import com.mprew.ec2.resources.annotation.ContextProperty;
+import com.mprew.ec2.resources.annotation.ContextResource;
 import com.mprew.ec2.resources.annotation.Dependencies;
 import com.mprew.ec2.resources.annotation.Dependency;
 import com.mprew.ec2.resources.annotation.Initialize;
@@ -546,7 +546,7 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 				Object currentValue = field.get(bean);
 				if (currentValue == null) {
 					ResourceInfo resource;
-					if (StringUtils.isEmpty(resName)) {
+					if (!StringUtils.hasText(resName)) {
 						resource = ctx.getResource(resourceType);
 					}
 					else {

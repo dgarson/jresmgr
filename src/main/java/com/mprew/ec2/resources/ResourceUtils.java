@@ -53,4 +53,22 @@ public class ResourceUtils {
 		}
 		throw new NoSuchMethodException(methodName);
 	}
+	
+	/**
+	 * Attempts to convert the provided verb into past tense using <b>extremely</b> simple logic.
+	 * 
+	 * @param verb
+	 *            the simple verb
+	 * @return the past tense of the verb
+	 */
+	public static String pastTense(String verb) {
+		if (verb.endsWith("y")) {
+			return verb.substring(0, verb.length() - 1) + "ied";
+		} else if (verb.endsWith("e")) {
+			return verb + "d";
+		} else if (verb.endsWith("p") || verb.endsWith("d")) {
+			verb += verb.charAt(verb.length() - 1);
+		}
+		return verb + "ed";
+	}
 }

@@ -2,8 +2,6 @@ package com.mprew.ec2.resources;
 
 import java.io.Serializable;
 
-import com.mprew.ec2.commons.util.ExceptionUtils;
-
 /**
  * Status of the resource which can be both polled and reported to the
  * {@link ResourceManager}.
@@ -109,7 +107,15 @@ public class ResourceHealth implements Serializable {
 		} else {
 			return "ResourceHealth " + level + ":" + description
 					+ ", threw "
-					+ ExceptionUtils.getRootCause(throwable);
+					+ getRootCause(throwable);
 		}
+	}
+	
+	private static Throwable getRootCause(Throwable t) {
+		Throwable cause = t;
+		while (cause.getCause() != null) {
+			cause = cause.getCause();
+		}
+		return cause;
 	}
 }

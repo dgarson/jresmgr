@@ -539,6 +539,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 		try {
 			stop(true);
 			
+			Thread.sleep(250);
+			
 			executor.shutdown();
 			try {
 				if (executor.awaitTermination(5000, TimeUnit.MILLISECONDS)) {
@@ -1419,7 +1421,9 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @return the system state
 	 */
 	public ResourceState getSystemState() {
-		return systemState;
+		synchronized (resourceLock) {
+			return systemState;
+		}
 	}
 	
 	/**
