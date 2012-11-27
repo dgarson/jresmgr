@@ -1,0 +1,4 @@
+jresmgr
+=======
+
+Java Resource Manager
