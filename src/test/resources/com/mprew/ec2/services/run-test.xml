@@ -11,4 +11,5 @@
 	
 	<bean id="managedResourceC" class="com.mprew.ec2.resources.ManagedC" />
 	
+	<bean id="managedPausable" class="com.mprew.ec2.resources.ManagedPausable"/>
 </beans>

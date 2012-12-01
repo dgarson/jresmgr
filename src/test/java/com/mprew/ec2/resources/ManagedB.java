@@ -3,15 +3,15 @@ package com.mprew.ec2.resources;
 import org.junit.Assert;
 
 import com.mprew.ec2.resources.annotation.ContextResource;
-import com.mprew.ec2.resources.annotation.Dependencies;
+import com.mprew.ec2.resources.annotation.Dependency;
 import com.mprew.ec2.resources.annotation.Initialize;
+import com.mprew.ec2.resources.annotation.Kill;
 import com.mprew.ec2.resources.annotation.ResourceType;
 import com.mprew.ec2.resources.annotation.Start;
-import com.mprew.ec2.resources.annotation.Stop;
 import com.mprew.ec2.resources.context.ResourceContext;
 
 @ResourceType(name = "managedResB")
-@Dependencies({"managedResA"})
+@Dependency("managedResA")
 public class ManagedB {
 
 	@ContextResource
@@ -28,7 +28,7 @@ public class ManagedB {
 		System.out.println("resourceObj = " + resourceObj);
 	}
 	
-	@Stop
+	@Kill
 	public void stop() {
 	}
 	

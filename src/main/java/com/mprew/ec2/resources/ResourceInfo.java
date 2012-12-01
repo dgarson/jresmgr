@@ -1,7 +1,9 @@
 package com.mprew.ec2.resources;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 
+import com.mprew.ec2.resources.action.ResourceAction;
 import com.mprew.ec2.resources.startup.DependencyElement;
 
 /**
@@ -48,22 +50,17 @@ public interface ResourceInfo {
 	public Collection<String> getDependencyNames();
 	
 	/**
-	 * Checks if this resource has an optional publish method.
-	 * @return true if it has a publish, false otherwise
-	 */
-	public boolean hasPublish();
-	
-	/**
-	 * Checks if this resource has an optional pause method.
-	 * @return true if it has a pause, false otherwise
-	 */
-	public boolean hasPause();
-	
-	/**
 	 * Waits for a specified state.
 	 * @param state the state to wait for
 	 * @return true if the state was entered, false if it couldn't be
 	 * @throws InterruptedException if interrupted while waiting
 	 */
 	public boolean waitForState(ResourceState state) throws InterruptedException;
+	
+	/**
+	 * Gets the resource method for the specified action, if one exists.
+	 * @param action the action type
+	 * @return the resource method, or <code>null</code>
+	 */
+	public Method getResourceMethod(ResourceAction action);
 }

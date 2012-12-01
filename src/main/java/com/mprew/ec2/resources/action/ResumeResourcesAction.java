@@ -16,8 +16,8 @@ class ResumeResourcesAction extends AbstractResourceAction {
 	
 	private final ResourceState nextState = ResourceState.RESUMING;
 	
-	public ResumeResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources) {
-		super(manager, resources);
+	public ResumeResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		super(manager, resources, isPhase);
 	}
 	
 	@Override
@@ -27,12 +27,16 @@ class ResumeResourcesAction extends AbstractResourceAction {
 	
 	@Override
 	protected void beginningAction() {
-		changeSystemState(ResourceState.RESUMING);
+		if (isPhase) {
+			changeSystemState(ResourceState.RESUMING);
+		}
 	}
 	
 	@Override
 	protected void finishedAction() {
-		changeSystemState(ResourceState.RUNNING);
+		if (isPhase) {
+			changeSystemState(ResourceState.RUNNING);
+		}
 	}
 	
 	@Override

@@ -11,6 +11,7 @@ public enum ResourceAction {
 	STARTING("start"),
 	PUBLISHING("publish"),
 	STOPPING("stop"),
+	KILLING("kill"),
 	PAUSING("pause"),
 	RESUMING("resume"),
 	SHUTTING_DOWN("shutdown"),

@@ -1,7 +1,6 @@
 package com.mprew.ec2.resources.action;
 
 import java.util.Collection;
-import java.util.concurrent.Callable;
 
 import com.mprew.ec2.resources.AbstractResourceAction;
 import com.mprew.ec2.resources.ResourceInfo;
@@ -23,27 +22,12 @@ public class ResourceActions {
 	}
 	
 	/**
-	 * Constructs a named Thread for the given ResourceAction.
-	 * @param action the action to perform
-	 * @return the Thread object
-	 */
-	public static Callable<Void> callableFor(AbstractResourceAction ... actions) {
-		if (actions.length == 0) {
-			throw new IllegalArgumentException("Must provide one or more actions");
-		}
-		else if (actions.length == 1) {
-			return actions[0];
-		}
-		return new SequentialActionTask(actions);
-	}
-	
-	/**
 	 * Returns an initialization action for a collection of resources
 	 * @param resources the resource collection
 	 * @return the initialization action
 	 */
-	public static AbstractResourceAction initialize(Collection<? extends ResourceInfo> resources) {
-		return new InitializeResourcesAction(resourceManager, resources);
+	public static AbstractResourceAction initialize(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return new InitializeResourcesAction(resourceManager, resources, isPhase);
 	}
 	
 	/**
@@ -51,8 +35,8 @@ public class ResourceActions {
 	 * @param resources the resource collection
 	 * @return the publication action
 	 */
-	public static AbstractResourceAction publish(Collection<? extends ResourceInfo> resources) {
-		return new PublishResourcesAction(resourceManager, resources);
+	public static AbstractResourceAction publish(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return new PublishResourcesAction(resourceManager, resources, isPhase);
 	}
 	
 	/**
@@ -60,8 +44,8 @@ public class ResourceActions {
 	 * @param resources the resource collection
 	 * @return the startup action
 	 */
-	public static AbstractResourceAction start(Collection<? extends ResourceInfo> resources) {
-		return new StartResourcesAction(resourceManager, resources);
+	public static AbstractResourceAction start(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return new StartResourcesAction(resourceManager, resources, isPhase);
 	}
 	
 	/**
@@ -69,8 +53,8 @@ public class ResourceActions {
 	 * @param resources the resource collection
 	 * @return the pause action
 	 */
-	public static AbstractResourceAction pause(Collection<? extends ResourceInfo> resources) {
-		return new PauseResourcesAction(resourceManager, resources);
+	public static AbstractResourceAction pause(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return new PauseResourcesAction(resourceManager, resources, isPhase);
 	}
 	
 	/**
@@ -78,8 +62,8 @@ public class ResourceActions {
 	 * @param resources the resource collection
 	 * @return the resume action
 	 */
-	public static AbstractResourceAction resume(Collection<? extends ResourceInfo> resources) {
-		return new ResumeResourcesAction(resourceManager, resources);
+	public static AbstractResourceAction resume(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return new ResumeResourcesAction(resourceManager, resources, isPhase);
 	}
 	
 	/**
@@ -89,8 +73,8 @@ public class ResourceActions {
 	 * @param forceful true if forceful shutdown, false otherwise
 	 * @return the shutdown action
 	 */
-	public static AbstractResourceAction stop(Collection<? extends ResourceInfo> resources, boolean forceful, boolean updateSystemState) {
-		return new StopResourcesAction(resourceManager, resources, forceful, updateSystemState);
+	public static AbstractResourceAction stop(Collection<? extends ResourceInfo> resources, boolean forceful, boolean isPhase) {
+		return new StopResourcesAction(resourceManager, resources, forceful, isPhase);
 	}
 	
 	/**
@@ -99,24 +83,7 @@ public class ResourceActions {
 	 * @return the shutdown action
 	 * @see #stop(Collection, boolean)
 	 */
-	public static AbstractResourceAction stop(Collection<? extends ResourceInfo> resources) {
-		return stop(resources, false, true);
-	}
-	
-	private static class SequentialActionTask implements Callable<Void> {
-		
-		private AbstractResourceAction[] actions;
-		
-		public SequentialActionTask(AbstractResourceAction ... actions) {
-			this.actions = actions;
-		}
-		
-		@Override
-		public Void call() throws Exception {
-			for (int i = 0; i < actions.length; i++) {
-				actions[i].call();
-			}
-			return null;
-		}
+	public static AbstractResourceAction stop(Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		return stop(resources, false, isPhase);
 	}
 }

@@ -16,25 +16,23 @@ class StopResourcesAction extends AbstractResourceAction {
 	
 	private final ResourceState shutdownState;
 	private final ResourceState nextState;
-	private final boolean updateSystemState;
 	
-	public StopResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean forceful, boolean updateSystemState) {
-		super(manager, resources);
+	public StopResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean forceful, boolean isPhase) {
+		super(manager, resources, isPhase);
 		this.shutdownState = (forceful ? ResourceState.SHUTDOWN_FORCEFULLY : ResourceState.SHUTDOWN_GRACEFULLY);
 		this.nextState = (forceful ? ResourceState.SHUTTING_DOWN_FORCEFULLY : ResourceState.SHUTTING_DOWN_GRACEFULLY);
-		this.updateSystemState = updateSystemState;
 	}
 	
 	@Override
 	protected void beginningAction() {
-		if (updateSystemState) {
+		if (isPhase) {
 			changeSystemState(nextState);
 		}
 	}
 	
 	@Override
 	protected void finishedAction() {
-		if (updateSystemState) {
+		if (isPhase) {
 			changeSystemState(shutdownState);
 		}
 	}

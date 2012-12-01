@@ -26,8 +26,6 @@ public class DependencyElement {
 	final Set<DependencyElement> dependencies;
 	/** The set of dependencies that refer to this element. */
 	final Set<DependencyElement> references;
-	/** Whether or not this resource has been declared explicitly */
-	private boolean declared = false;
 	/** The ResourceMetadata for this element */
 	ResourceInfo resource;
 	
@@ -104,23 +102,6 @@ public class DependencyElement {
 			throw new IllegalStateException("The resource pointer can only be set once for Resource [" + name + "]");
 		}
 		this.resource = resource;
-	}
-	
-	/**
-	 * Marks this resource as a declared resource. This is only necessary if there are no dependencies declared
-	 * for the resource.
-	 */
-	public void markDeclared() {
-		declared = true;
-	}
-	
-	/**
-	 * Checks if this dependency element has officially been declared. This checks if either it has been explicitly
-	 * marked as declared or if <i>any</i> dependencies have been added to it.
-	 * @return true if declared, false if unresolved
-	 */
-	public boolean isDeclared() {
-		return (declared || !dependencies.isEmpty());
 	}
 	
 	/**
@@ -410,29 +391,6 @@ public class DependencyElement {
 		} catch (DependencyException de) {
 			log.warn("Unable to check is dependencies are running for " + this, de);
 			return false;
-		}
-	}
-	
-	public DependencyException checkDependencies(DependencyTracker tracker) {
-		if (dependencies.isEmpty()) {
-			return null;
-		}
-		try {
-			tracker.push(this);
-			for (DependencyElement depEl : dependencies) {
-				try {
-					tracker.visit(depEl);
-				} catch (DependencyException de) {
-					return de;
-				}
-				DependencyException missing = depEl.checkDependencies(tracker);
-				if (missing != null) {
-					return missing;
-				}
-			}
-			return null;
-		} finally {
-			tracker.pop();
 		}
 	}
 	

@@ -255,6 +255,12 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 		}
 	}
 	
+	/**
+	 * Verifies that the specified method is non-null, otherwise a ValidationException is thrown.
+	 * @param m the reflective Method object 
+	 * @param name the method displayable name
+	 * @throws ValidationException if the provided method is null
+	 */
 	private void verifyMethod(Method m, String name) throws ValidationException {
 		if (m == null) {
 			throw new ValidationException(name + " Method is required for " + this);
@@ -271,37 +277,37 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 			resourceContextMethod = method;
 			log.trace("Found setResourceContext method for " + this + " [ResourceContextAware]");
 		}
-		if (method.isAnnotationPresent(Initialize.class)) {
+		if (method.isAnnotationPresent(Initialize.class) && initMethod == null) {
 			verifyMethodParameters(method);
 			initMethod = method;
 			log.trace("Found @Initialize method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Kill.class)) {
+		else if (method.isAnnotationPresent(Kill.class) && killMethod == null) {
 			verifyMethodParameters(method);
 			killMethod = method;
 			log.trace("Found @Kill method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Pause.class)) {
+		else if (method.isAnnotationPresent(Pause.class) && pauseMethod == null) {
 			verifyMethodParameters(method);
 			pauseMethod = method;
 			log.trace("Found @Pause method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Resume.class)) {
+		else if (method.isAnnotationPresent(Resume.class) && resumeMethod == null) {
 			verifyMethodParameters(method);
 			resumeMethod = method;
 			log.trace("Found @Resume method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Start.class)) {
+		else if (method.isAnnotationPresent(Start.class) && startMethod == null) {
 			verifyMethodParameters(method);
 			startMethod = method;
 			log.trace("Found @Start method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Stop.class)) {
+		else if (method.isAnnotationPresent(Stop.class) && stopMethod == null) {
 			verifyMethodParameters(method);
 			stopMethod = method;
 			log.trace("Found @Stop method for " + this + ": " + method.getName());
 		}
-		else if (method.isAnnotationPresent(Publish.class)) {
+		else if (method.isAnnotationPresent(Publish.class) && publishMethod == null) {
 			verifyMethodParameters(method);
 			publishMethod = method;
 			log.trace("Found @Publish method for " + this + ": " + method.getName());
@@ -355,27 +361,75 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 		return (resourceContextMethod != null);
 	}
 	
-	@Override
+	/**
+	 * Checks if this resource has a publish method.
+	 * @return true if there is a publish method
+	 */
 	public boolean hasPublish() {
 		return (publishMethod != null);
 	}
 	
-	@Override
+	/**
+	 * Checks if this resource has a pause method.
+	 * @return true if there is a pause method
+	 */
 	public boolean hasPause() {
 		return (pauseMethod != null);
 	}
 	
+	/**
+	 * Checks if this resource has a kill method.
+	 * @return true if there is a kill method
+	 */
 	public boolean hasKill() {
 		return (killMethod != null);
 	}
 
+	/**
+	 * Checks if this resource has an initialization method.
+	 * @return true if there is an init. method
+	 */
 	public boolean hasInitialize() {
 		return (initMethod != null);
 	}
 	
+	/**
+	 * If this resource is an instance of ResourceContextAware, this will invoke the
+	 * <tt>setResourceContext</tt> method on the object.
+	 * @param ctx the resource context
+	 * @throws ResourceException on any injection failure
+	 */
 	public void setContextIfAware(ResourceContext ctx) throws ResourceException {
 		if (resourceContextMethod != null) {
 			invokeMethod(resourceContextMethod, ResourceAction.UNSPECIFIED, ctx);
+		}
+	}
+	
+	/**
+	 * Gets the reflection resource Method that is used to perform the specified action for this Resource.
+	 * @param action the resource action
+	 * @return the resource method, or <code>null</code>
+	 */
+	@Override
+	public Method getResourceMethod(ResourceAction action) {
+		switch (action) {
+			case INITIALIZING:
+				return initMethod;
+			case PAUSING:
+				return pauseMethod;
+			case RESUMING:
+				return resumeMethod;
+			case PUBLISHING:
+				return publishMethod;
+			case SHUTTING_DOWN:
+			case STOPPING:
+				return stopMethod;
+			case STARTING:
+				return startMethod;
+			case KILLING:
+				return killMethod;
+			default:
+				throw new IllegalArgumentException("Invalid resource action type: " + action);
 		}
 	}
 	
@@ -459,6 +513,13 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 		return params;
 	}
 	
+	/**
+	 * Invokes the specified resource Method thru Reflection for the specified ResourceAction type.
+	 * @param method the reflective Method object
+	 * @param action the resource action type
+	 * @param ctx the resource context
+	 * @throws ResourceException if any exceptions occur while invoking the method, or the method is <code>null</code>
+	 */
 	private void invokeMethod(Method method, ResourceAction action, ResourceContext ctx) throws ResourceException {
 		if (method == null) {
 			throw new ResourceException("Unable to invoke " + action.getVerb() + " on " + this + " because it has no " + action.getVerb() + " method");

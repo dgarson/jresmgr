@@ -15,8 +15,8 @@ import com.mprew.ec2.resources.startup.DependencyException;
 
 class PublishResourcesAction extends AbstractResourceAction {
 	
-	public PublishResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources) {
-		super(manager, resources);
+	public PublishResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		super(manager, resources, isPhase);
 	}
 	
 	@Override
@@ -26,17 +26,21 @@ class PublishResourcesAction extends AbstractResourceAction {
 	
 	@Override
 	protected boolean isApplicable(ResourceInfo resource) {
-		return resource.hasPublish();
+		return (resource.getResourceMethod(ResourceAction.PAUSING) != null);
 	}
 	
 	@Override
 	protected void beginningAction() {
-		changeSystemState(ResourceState.PUBLISHING);
+		if (isPhase) {
+			changeSystemState(ResourceState.PUBLISHING);
+		}
 	}
 	
 	@Override
 	protected void finishedAction() {
-		changeSystemState(ResourceState.RUNNING);
+		if (isPhase) {
+			changeSystemState(ResourceState.RUNNING);
+		}
 	}
 	
 	@Override

@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import com.mprew.ec2.resources.AbstractResourceAction;
+import com.mprew.ec2.resources.ImpossibleActionException;
 import com.mprew.ec2.resources.ResourceInfo;
 import com.mprew.ec2.resources.ResourceManager;
 import com.mprew.ec2.resources.ResourceState;
@@ -19,8 +20,8 @@ class PauseResourcesAction extends AbstractResourceAction {
 	private final ResourceState nextState = ResourceState.PAUSING;
 	private final ResourceState finalState = ResourceState.PAUSED;
 	
-	public PauseResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources) {
-		super(manager, resources);
+	public PauseResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		super(manager, resources, isPhase);
 	}
 	
 	@Override
@@ -46,7 +47,7 @@ class PauseResourcesAction extends AbstractResourceAction {
 			for (Map.Entry<ResourceInfo, DependencyConditionException> entry : resourcesWithUnpausableRefs.entrySet()) {
 				buf.append("\n" + entry.getKey() + " throw exception due to referent: " + entry.getValue().getResource());
 			}
-			throw new ValidationException("Unable to pause resources while references are unpausable: " + buf);
+			throw new ValidationException("Unable to pause resources while references are unpausable: " + buf, new ImpossibleActionException("References are unpausable"));
 		}
 	}
 	
@@ -57,17 +58,21 @@ class PauseResourcesAction extends AbstractResourceAction {
 	
 	@Override
 	protected void beginningAction() {
-		changeSystemState(ResourceState.PAUSING);
+		if (isPhase) {
+			changeSystemState(ResourceState.PAUSING);
+		}
 	}
 	
 	@Override
 	protected void finishedAction() {
-		changeSystemState(ResourceState.PAUSED);
+		if (isPhase) {
+			changeSystemState(ResourceState.PAUSED);
+		}
 	}
 	
 	@Override
 	protected boolean isApplicable(ResourceInfo resource) {
-		return resource.hasPause() && resource.getState().isNewStateOk(nextState);
+		return (resource.getResourceMethod(ResourceAction.PAUSING) != null) && resource.getState().isNewStateOk(nextState);
 	}
 	
 	@Override
@@ -86,7 +91,7 @@ class PauseResourcesAction extends AbstractResourceAction {
 		 if (metadata.getElement().referencesHaveCondition(new ResourceCondition() {
 			@Override
 			public boolean evaluate(ResourceInfo resource) throws DependencyException {
-				if (resource.hasPause()) {
+				if (resource.getResourceMethod(ResourceAction.PAUSING) != null) {
 					return (resource.getState() == ResourceState.PAUSED);
 				}
 				else if (resource.getState() == ResourceState.RUNNING) {

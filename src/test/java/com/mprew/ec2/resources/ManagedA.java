@@ -1,7 +1,9 @@
 package com.mprew.ec2.resources;
 
 import com.mprew.ec2.resources.annotation.ContextResource;
+import com.mprew.ec2.resources.annotation.Pause;
 import com.mprew.ec2.resources.annotation.ResourceType;
+import com.mprew.ec2.resources.annotation.Resume;
 import com.mprew.ec2.resources.annotation.Start;
 import com.mprew.ec2.resources.annotation.Stop;
 
@@ -26,6 +28,16 @@ public class ManagedA {
 	
 	@Stop
 	public void stop() {
+	}
+
+	@Pause
+	public void pauseIt() {
+		System.out.println("Paused ManagedA");
+	}
+	
+	@Resume
+	public void resumeIt() {
+		System.out.println("Resumed ManagedA");
 	}
 	
 	@Override

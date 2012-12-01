@@ -30,6 +30,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import com.mprew.ec2.resources.action.ResourceAction;
 import com.mprew.ec2.resources.action.ResourceActions;
 import com.mprew.ec2.resources.annotation.ResourceType;
 import com.mprew.ec2.resources.context.MutableApplicationContext;
@@ -37,9 +38,11 @@ import com.mprew.ec2.resources.context.ResourceContext;
 import com.mprew.ec2.resources.event.PhaseChangeEvent;
 import com.mprew.ec2.resources.event.PhaseChangeListener;
 import com.mprew.ec2.resources.event.ResourceEvent;
+import com.mprew.ec2.resources.event.ResourceRegisteredEvent;
 import com.mprew.ec2.resources.event.ResourceEvent.EventType;
 import com.mprew.ec2.resources.event.ResourceFailedEvent;
 import com.mprew.ec2.resources.event.ResourceListener;
+import com.mprew.ec2.resources.event.ResourceUnregisteredEvent;
 import com.mprew.ec2.resources.startup.DependencyException;
 import com.mprew.ec2.resources.validation.ValidationException;
 
@@ -275,7 +278,10 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @throws ResourceException if there are exceptions during initialization
 	 */
 	public synchronized void initialize() throws ResourceException {
-		Future<?> future = phaseExecutor.submit(ResourceActions.initialize(resourceMap.values()));
+		Future<?> future;
+		synchronized (resourceMap) {
+			future = phaseExecutor.submit(ResourceActions.initialize(resourceMap.values(), true));
+		}
 		try {
 			future.get();
 			if (!pendingInjections.isEmpty()) {
@@ -297,6 +303,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			}
 			log.info("Finished running Initialization action.");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke initialization action", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for initialization to complete", ie);
@@ -309,12 +317,17 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 */
 	public synchronized void start() throws ResourceException {
 		startingUp = true;
-		Future<?> future = phaseExecutor.submit(ResourceActions.start(resourceMap.values()));
+		Future<?> future;
+		synchronized (resourceMap) {
+			future = phaseExecutor.submit(ResourceActions.start(resourceMap.values(), true));
+		}
 		try {
 			future.get();
 			startingUp = false;
 			log.info("Finished running Start action.");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke startup action", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for initialization to complete", ie);
@@ -323,11 +336,13 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	
 	@Override
 	public Callable<?> startAsync(String resourceName) throws ResourceNotFoundException {
-		ResourceMetadata resource = resourceMap.get(resourceName);
-		if (resource == null) {
-			throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+		synchronized (resourceMap) {
+			ResourceMetadata resource = resourceMap.get(resourceName);
+			if (resource == null) {
+				throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+			}
+			return ResourceActions.start(Arrays.asList(resource), false);
 		}
-		return ResourceActions.start(Arrays.asList(resource));
 	}
 	
 	@Override
@@ -337,6 +352,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			future.get();
 			log.info("Finished running Start action for Resource [" + resourceName + "]");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke start", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Resume to complete", ie);
@@ -349,11 +366,16 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @throws ResourceException if any exceptions occur while publishing
 	 */
 	public synchronized void publish() throws ResourceException {
-		Future<?> future = phaseExecutor.submit(ResourceActions.publish(resourceMap.values()));
+		Future<?> future;
+		synchronized (resourceMap) {
+			future = phaseExecutor.submit(ResourceActions.publish(resourceMap.values(), true));
+		}
 		try {
 			future.get();
 			log.info("Finished running Publish action.");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke publish action", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for initialization to complete", ie);
@@ -362,11 +384,13 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	
 	@Override
 	public Callable<?> publishAsync(String resourceName) throws ResourceNotFoundException {
-		ResourceMetadata resource = resourceMap.get(resourceName);
-		if (resource == null) {
-			throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+		synchronized (resourceMap) {
+			ResourceMetadata resource = resourceMap.get(resourceName);
+			if (resource == null) {
+				throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+			}
+			return ResourceActions.publish(Arrays.asList(resource), false);
 		}
-		return ResourceActions.publish(Arrays.asList(resource));
 	}
 	
 	@Override
@@ -376,6 +400,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			future.get();
 			log.info("Finished running Publish action for Resource [" + resourceName + "]");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke resume", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Resume to complete", ie);
@@ -388,11 +414,16 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @throws ResourceException any exceptions while pausing
 	 */
 	public synchronized void pause() throws ResourceException {
-		Future<?> future = phaseExecutor.submit(ResourceActions.pause(resourceMap.values()));
+		Future<?> future;
+		synchronized (resourceMap) {
+			future = phaseExecutor.submit(ResourceActions.pause(resourceMap.values(), true));
+		}
 		try {
 			future.get();
 			log.info("Finished running Pause action.");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke pause", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Pause to complete", ie);
@@ -401,14 +432,16 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	
 	@Override
 	public Callable<?> pauseAsync(String resourceName) throws ResourceNotFoundException, ImpossibleActionException {
-		ResourceMetadata resource = resourceMap.get(resourceName);
-		if (resource == null) {
-			throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+		synchronized (resourceMap) {
+			ResourceMetadata resource = resourceMap.get(resourceName);
+			if (resource == null) {
+				throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+			}
+			if (!resource.hasPause()) {
+				throw new ImpossibleActionException("Cannot pause Resource [" + resourceName + "] because it has no @Pause method defined");
+			}
+			return ResourceActions.pause(Arrays.asList(resource), false);
 		}
-		if (!resource.hasPause()) {
-			throw new ImpossibleActionException("Cannot pause Resource [" + resourceName + "] because it has no @Pause method defined");
-		}
-		return ResourceActions.pause(Arrays.asList(resource));
 	}
 	
 	@Override
@@ -418,7 +451,9 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			future.get();
 			log.info("Finished running Pause action for Resource [" + resourceName + "]");
 		} catch (ExecutionException ee) {
-			throw new ResourceException("Unable to invoke resume", ee.getCause());
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
+			throw new ResourceException("Unable to invoke pause", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Resume to complete", ie);
 		}
@@ -429,11 +464,16 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @throws ResourceException on any exceptions while resuming
 	 */
 	public synchronized void resume() throws ResourceException {
-		Future<?> future = phaseExecutor.submit(ResourceActions.resume(resourceMap.values()));
+		Future<?> future;
+		synchronized (resourceMap) {
+			future = phaseExecutor.submit(ResourceActions.resume(resourceMap.values(), true));
+		}
 		try {
 			future.get();
 			log.info("Finished running Resume action.");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke resume", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Resume to complete", ie);
@@ -442,14 +482,16 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	
 	@Override
 	public Callable<?> resumeAsync(String resourceName) throws ResourceNotFoundException, ImpossibleActionException {
-		ResourceMetadata resource = resourceMap.get(resourceName);
-		if (resource == null) {
-			throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+		synchronized (resourceMap) {
+			ResourceMetadata resource = resourceMap.get(resourceName);
+			if (resource == null) {
+				throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+			}
+			if (!resource.hasPause()) {
+				throw new ImpossibleActionException("Cannot resume Resource [" + resourceName + "] because it has no @Resume method defined");
+			}
+			return ResourceActions.resume(Arrays.asList(resource), false);
 		}
-		if (!resource.hasPause()) {
-			throw new ImpossibleActionException("Cannot resume Resource [" + resourceName + "] because it has no @Resume method defined");
-		}
-		return ResourceActions.resume(Arrays.asList(resource));
 	}
 	
 	@Override
@@ -459,6 +501,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			future.get();
 			log.info("Finished running Resume action for Resource [" + resourceName + "]");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to invoke resume", ee.getCause());
 		} catch (InterruptedException ie) {
 			throw new ResourceException("Interrupted waiting for Resume to complete", ie);
@@ -471,10 +515,15 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 * @throws ResourceException on any shutdown exception
 	 */
 	public synchronized void stop(boolean forceful) throws ResourceException {
-		Future<?> result = phaseExecutor.submit(ResourceActions.stop(resourceMap.values(), forceful, true));
+		Future<?> result;
+		synchronized (resourceMap) {
+			result = phaseExecutor.submit(ResourceActions.stop(resourceMap.values(), forceful, true));
+		}
 		try {
 			result.get();
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to execute ResourceStoppingTask for " + resourceMap.size() + " resources", ee.getCause());
 		} catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
@@ -492,11 +541,13 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	
 	@Override
 	public Callable<?> stopAsync(String resourceName, boolean forceful) throws ResourceNotFoundException {
-		ResourceMetadata resource = resourceMap.get(resourceName);
-		if (resource == null) {
-			throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+		synchronized (resourceMap) {
+			ResourceMetadata resource = resourceMap.get(resourceName);
+			if (resource == null) {
+				throw new ResourceNotFoundException("Unrecognized resource: " + resourceName);
+			}
+			return ResourceActions.stop(Arrays.asList(resource), forceful, false);
 		}
-		return ResourceActions.stop(Arrays.asList(resource), forceful, false);
 	}
 	
 	@Override
@@ -506,6 +557,8 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			result.get();
 			log.info("Finished running Stop action for Resource [" + resourceName + "]");
 		} catch (ExecutionException ee) {
+			if (ee.getCause() instanceof ResourceException)
+				throw (ResourceException)ee.getCause();
 			throw new ResourceException("Unable to execute ResourceStoppingTask for " + resourceMap.size() + " resources", ee.getCause());
 		} catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
@@ -714,7 +767,13 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	 */
 	void fireResourceEvent(ResourceMetadata resource, ResourceState oldState, EventType eventType) {
 		// Construct a new ResourceEvent from the source and type
-		final ResourceEvent evt = new ResourceEvent(resource, eventType);
+		final ResourceEvent evt;
+		if (eventType == EventType.REGISTERED)
+			evt = new ResourceRegisteredEvent(resource);
+		else if (eventType == EventType.UNREGISTERED)
+			evt = new ResourceUnregisteredEvent(resource);
+		else
+			evt = new ResourceEvent(resource, eventType);
 		synchronized (listenerMap) {
 			// Keep track of the invoked ResourceListeners in case there are overlapping listeners registered w/ResourceFilters that match the same resource
 			Set<ResourceListener> invoked = new HashSet<ResourceListener>();
@@ -938,7 +997,7 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 							break;
 						case PAUSING:
 						case PAUSED:
-							if (resource.hasPause()) {
+							if (resource.getResourceMethod(ResourceAction.PAUSING) != null) {
 								eventType = EventType.PAUSING;
 								setResourceState(resource, currentState, ResourceState.PAUSING, updateSystemHealth);
 								resource.pause(this);
@@ -973,7 +1032,7 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 							break;
 						case RESUMING:
 						case RUNNING:
-							if (resource.hasPause()) {
+							if (resource.getResourceMethod(ResourceAction.PAUSING) != null) {
 								eventType = EventType.RESUMING;
 								setResourceState(resource, currentState, ResourceState.RESUMING, updateSystemHealth);
 								resource.resume(this);
@@ -985,13 +1044,11 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 						case SHUTDOWN_FORCEFULLY:
 							eventType = EventType.STOPPING;
 							forcefulShutdown(resource, currentState, updateSystemHealth);
-							unregisterResource(resource);
 							break;
 						case SHUTTING_DOWN_GRACEFULLY:
 						case SHUTDOWN_GRACEFULLY:
 							eventType = EventType.STOPPING;
 							gracefulShutdown(resource, currentState, updateSystemHealth);
-							unregisterResource(resource);
 							break;
 					}
 					break;
@@ -1018,7 +1075,7 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 					try {
 						// Tell someone about it here since we've seen the following shutdown hang
 						log.error(resource + " moving to state " + newState + " threw exception", e);
-						if (resource.hasKill()) {
+						if (((ResourceMetadata)resource).hasKill()) {
 							resource.kill(this);
 						}
 						else {

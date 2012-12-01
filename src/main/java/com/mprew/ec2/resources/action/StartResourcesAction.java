@@ -15,8 +15,8 @@ import com.mprew.ec2.resources.startup.DependencyException;
 
 class StartResourcesAction extends AbstractResourceAction
 {
-	public StartResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources) {
-		super(manager, resources);
+	public StartResourcesAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean isPhase) {
+		super(manager, resources, isPhase);
 	}
 	
 	@Override
@@ -26,12 +26,16 @@ class StartResourcesAction extends AbstractResourceAction
 	
 	@Override
 	protected void beginningAction() {
-		changeSystemState(ResourceState.STARTING);
+		if (isPhase) {
+			changeSystemState(ResourceState.STARTING);
+		}
 	}
 	
 	@Override
 	protected void finishedAction() {
-		changeSystemState(ResourceState.STARTED);
+		if (isPhase) {
+			changeSystemState(ResourceState.STARTED);
+		}
 	}
 	
 	@Override

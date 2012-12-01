@@ -16,6 +16,13 @@ import com.mprew.ec2.resources.startup.DependencyElement;
 import com.mprew.ec2.resources.startup.DependencyException;
 import com.mprew.ec2.resources.startup.DependencySatisfaction;
 
+/**
+ * Rudimentary implementation of a dependency calculator that dynamically orders dependencies for startup
+ * and shutdown, as well as constructing a dependency graph in the meantime which is used for moving resources
+ * into different states together.
+ * 
+ * @author dgarson
+ */
 class DependencyCalculator implements Iterable<DependencyElement> {
 	
 	private static final Logger log = LoggerFactory.getLogger(DependencyCalculator.class);

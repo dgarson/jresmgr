@@ -55,6 +55,7 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 	private final Map<Future<Boolean>, ResourceInfo> jobMap = new HashMap<Future<Boolean>, ResourceInfo>();
 	
 	protected final ResourceManager resourceManager;
+	protected final boolean isPhase;
 	
 	private final AtomicInteger state = new AtomicInteger(STATE_INITIALIZED);
 	private final CountDownLatch latch = new CountDownLatch(1);
@@ -64,8 +65,9 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 	 * @param manager the resource manager
 	 * @param resources the resource collection
 	 */
-	protected AbstractResourceAction(ResourceManager manager, Collection<? extends ResourceInfo> resources) {
+	protected AbstractResourceAction(ResourceManager manager, Collection<? extends ResourceInfo> resources, boolean isPhase) {
 		this.resourceManager = manager;
+		this.isPhase = isPhase;
 		this.initialResources = resources;
 		this.resources = new LinkedList<ResourceInfo>();
 		completionQueue = new LinkedBlockingQueue<Future<Boolean>>(resources.size());
@@ -312,7 +314,14 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 				resourceManager.workingOn(resource);
 			}
 			
-			validate();
+			try {
+				validate();
+			} catch (ValidationException ve) {
+				if (ve.getCause() != null && ve.getCause() instanceof Exception) {
+					throw (Exception)ve.getCause();
+				}
+				throw new ResourceException("Unable to perform resource action", ve);
+			}
 			
 			// Invoke callback if overridden
 			beginningAction();
@@ -345,11 +354,14 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 						}
 					}
 				}
-				 
+				
+				// Accumulate a list of resources that we can continue to perform our action on
 				List<String> resourceNames = new ArrayList<String>();
 				for (final ResourceInfo resource : continuableResources) {
+					// Submit a job for that resource and map its Future to the resource
 					jobMap.put(startupService.submit(createJob(resource)), resource);
 					resourceNames.add(resource.getResourceName());
+					
 					started++;
 				}
 				if (!resourceNames.isEmpty()) {
@@ -362,10 +374,13 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 				// Clear the startable resources as we have already tried to stop them
 				continuableResources.clear();
 				
-				// Wait until we can submit another job
+				// Check if we have more jobs to submit
 				if (moreToSubmit()) {
 					try {
+						// Wait until we can submit another job
 						waitToSubmit(jobMap);
+						
+						// Check if we have failed
 						ResourceFailureTracker tracker = getIfFailuresExceededThreshold(5);
 						if (tracker != null) {
 							throw new ResourceException("Unable to complete action " + getActionName(false) + " for " + resources, tracker.getFailureException());

@@ -94,7 +94,7 @@ public enum ResourceState {
 		
 		@Override
 		public boolean isNewStateOk(ResourceState to, ResourceInfo resource) {
-			if (resource == null || !resource.hasPause()) {
+			if (resource == null || !((ResourceMetadata)resource).hasPause()) {
 				return (to == SHUTTING_DOWN_FORCEFULLY || to == SHUTTING_DOWN_GRACEFULLY);
 			}
 			else {
