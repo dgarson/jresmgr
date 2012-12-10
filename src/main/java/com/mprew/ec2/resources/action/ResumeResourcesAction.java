@@ -67,7 +67,6 @@ class ResumeResourcesAction extends AbstractResourceAction {
 	protected Callable<Boolean> createJob(final ResourceInfo resource) {
 		return new Callable<Boolean>() {
 			@Override
-			@SuppressWarnings("unused")
 			public Boolean call() throws Exception {
 				if (!resource.getState().isEquivalent(ResourceState.PAUSED)) {
 					return Boolean.FALSE;

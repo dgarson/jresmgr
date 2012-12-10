@@ -12,4 +12,9 @@
 	<bean id="managedResourceC" class="com.mprew.ec2.resources.ManagedC" />
 	
 	<bean id="managedPausable" class="com.mprew.ec2.resources.ManagedPausable"/>
+	
+	<bean id="awsCredObj" class="com.mprew.ec2.resources.AWSCredObj">
+		<property name="accessKey" value="accessKeyHere"/>
+		<property name="secretKey" value="secretKeyHere"/>
+	</bean>
 </beans>

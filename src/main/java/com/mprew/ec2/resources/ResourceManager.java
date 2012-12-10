@@ -68,6 +68,7 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 	private final ExecutorService phaseExecutor = Executors.newFixedThreadPool(6, new PhaseJobThreadFactory());
 	private final Object resourceLock = new Object();
 	private Map<String, ResourceMetadata> resourceMap = new ConcurrentHashMap<String, ResourceMetadata>();
+	private Map<String, ManagedResourceInfo> managedObjects = new ConcurrentHashMap<String, ManagedResourceInfo>();
 	private Map<String, ResourceMetadata> beanMap = new ConcurrentHashMap<String, ResourceMetadata>();
 	private Map<ResourceMetadata, Set<Thread>> workingOnResources = new ConcurrentHashMap<ResourceMetadata, Set<Thread>>();
 	private Map<String, Object> properties = new ConcurrentHashMap<String, Object>();
@@ -149,6 +150,21 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			for (ResourceMetadata resource : resourceMap.values()) {
 				resource.setContextIfAware(this);
 			}
+		}
+		
+		// Automatically discover ManagedObjects
+		Map<String, ManagedObject> managedObjects = appContext.getBeansOfType(ManagedObject.class, true, false);
+		for (Map.Entry<String, ManagedObject> entry : managedObjects.entrySet()) {
+			ManagedObject obj = entry.getValue();
+			String resName = obj.getResourceName();
+			if (resourceMap.containsKey(resName)) {
+				throw new IllegalArgumentException("Unable to use Resource Name [" + resName + "] for Bean [" + entry.getKey() + "] because it is in use by a ResourceType");
+			}
+			else if (managedObjects.containsKey(resName)) {
+				throw new IllegalArgumentException("Unable to use Resource Name [" + resName + "] for Bean [" + entry.getKey() + "] because it is in use by another ManagedObject");
+			}
+			this.managedObjects.put(resName, new ManagedResourceInfo(entry.getKey(), resName, obj));
+			log.info("Discovered ManagedObject [" + resName + "] of type " + obj.getClass().getName());
 		}
 		
 		calculator = new DependencyCalculator();
@@ -1405,7 +1421,14 @@ public class ResourceManager implements ResourceContext, InitializingBean, Dispo
 			meta = resourceMap.get(resourceName);
 		}
 		if (meta == null) {
-			throw new ResourceNotFoundException("Unable to locate resource: " + resourceName);
+			ManagedResourceInfo info;
+			synchronized (managedObjects) {
+				info = managedObjects.get(resourceName);
+			}
+			if (info == null) {
+				throw new ResourceNotFoundException("Unable to locate resource: " + resourceName);
+			}
+			return info;
 		}
 		return meta;
 	}

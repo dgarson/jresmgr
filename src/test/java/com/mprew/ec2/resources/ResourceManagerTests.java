@@ -100,6 +100,12 @@ public class ResourceManagerTests {
 		// resmgr.unregisterResource("managedResC");
 		
 		Thread.sleep(1000);
+		
+		resmgr.registerResource("et", "et", new EverythingThrows(), false, true);
+		try {
+			resmgr.start("et");
+		} catch (ResourceException re) {
+		}
 	}
 	
 	@Test(expected = ImpossibleActionException.class)

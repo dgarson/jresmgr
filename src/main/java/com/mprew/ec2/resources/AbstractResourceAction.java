@@ -127,7 +127,6 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 		// No-op
 	}
 	
-	@SuppressWarnings("unused")
 	@Override
 	public void validate() throws ValidationException {
 		// No-op
@@ -305,7 +304,7 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 	}
 	
 	@Override
-	public Void call() throws Exception {
+	public final Void call() throws Exception {
 		try {
 			state.set(STATE_RUNNING);
 			populateResources();
@@ -430,7 +429,7 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 	 * @throws InterruptedException if interrupted while waiting
 	 * @throws IllegalStateException if the action has not yet been started
 	 */
-	public void waitFor() throws InterruptedException {
+	public final void waitFor() throws InterruptedException {
 		if (state.get() == STATE_INITIALIZED) {
 			throw new IllegalStateException("You must wait until the action has been started before waiting on it");
 		}
@@ -445,35 +444,56 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 	 * @throws InterruptedException if interrupted while waiting
 	 * @throws IllegalStateException if the action has not yet been started
 	 */
-	public boolean waitFor(long timeout, TimeUnit unit) throws InterruptedException {
+	public final boolean waitFor(long timeout, TimeUnit unit) throws InterruptedException {
 		if (state.get() == STATE_INITIALIZED) {
 			throw new IllegalStateException("You must wait until the action has been started before waiting on it");
 		}
 		return latch.await(timeout, unit);
 	}
 	
+	/**
+	 * Static inner class that encapsulates tracking information for resource failures that have occurred within 
+	 * this action.
+	 * 
+	 * @author dgarson
+	 */
 	protected static class ResourceFailureTracker {
 		private ResourceInfo resource;
 		private int failureCount;
 		private long lastFailureTime;
 		private List<Exception> failureCauses = new ArrayList<Exception>();
 		
-		public ResourceFailureTracker(ResourceInfo resource) {
+		private ResourceFailureTracker(ResourceInfo resource) {
 			this.resource = resource;
 		}
 		
+		/**
+		 * Gets the resource that this tracker is reporting errors on.
+		 * @return the resource
+		 */
 		public ResourceInfo getResource() {
 			return resource;
 		}
 		
+		/**
+		 * @return the number of failures
+		 */
 		public int getFailureCount() {
 			return failureCount;
 		}
 		
+		/**
+		 * Gets the last recorded exception timestamp.
+		 * @return the exception timestamp, or zero indicating no exceptions
+		 */
 		public long getLastFailureTime() {
 			return lastFailureTime;
 		}
 		
+		/**
+		 * Records a failure caused by an exception.
+		 * @param cause the cause of the exception
+		 */
 		public void failure(Exception cause) {
 			failureCount++;
 			lastFailureTime = System.currentTimeMillis();
@@ -482,10 +502,18 @@ public abstract class AbstractResourceAction implements Callable<Void>, Validata
 			}
 		}
 		
+		/**
+		 * Causes a failure to be recorded without a causing exception.
+		 * @see #failure(Exception)
+		 */
 		public void failure() {
 			failure(null);
 		}
 		
+		/**
+		 * Gets the last exception that caused a failure.
+		 * @return the last failure cause, or <code>null</code>
+		 */
 		public Exception getFailureException() {
 			if (failureCauses.isEmpty()) {
 				return null;

@@ -53,7 +53,6 @@ class InitializeResourcesAction extends AbstractResourceAction
 	protected Callable<Boolean> createJob(final ResourceInfo resource) {
 		return new Callable<Boolean>() {
 			@Override
-			@SuppressWarnings("unused")
 			public Boolean call() throws Exception {
 				changeResourceState(resource, resource.getState(), ResourceState.INITIALIZED, false);
 				return Boolean.TRUE;

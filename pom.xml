@@ -6,6 +6,9 @@
     <version>0.1-SNAPSHOT</version>
   </parent>
   <artifactId>mprew-resource-manager</artifactId>
+  <properties>
+  	<ec2-master-version>0.1-SNAPSHOT</ec2-master-version>
+  </properties>
   
   <dependencies>
   	<dependency>

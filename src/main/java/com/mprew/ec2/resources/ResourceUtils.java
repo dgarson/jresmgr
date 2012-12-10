@@ -18,7 +18,7 @@ public class ResourceUtils {
 	 * @return true if a resource, false otherwise
 	 */
 	public static boolean isResource(Class<?> type) {
-		return type.isAnnotationPresent(ResourceType.class);
+		return type.isAnnotationPresent(ResourceType.class) || ManagedObject.class.isAssignableFrom(type);
 	}
 	
 	/**

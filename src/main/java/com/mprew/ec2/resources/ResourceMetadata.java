@@ -614,7 +614,7 @@ class ResourceMetadata implements Validatable, ResourceInfo {
 						resource = ctx.getResource(resName);
 					}
 					field.set(bean, resource.getInstance());
-					log.info("Injected Field [" + field.getName() + "] for Resource [" + resource.getResourceName() + "] of Type [" + resourceType + "]");
+					log.info("Injected Field [" + field.getName() + "] for Resource [" + getResourceName() + "] of Type [" + resourceType + "]");
 				}
 				iter.remove();
 			} catch (IllegalAccessException iae) {

@@ -10,6 +10,9 @@ import com.mprew.ec2.resources.annotation.Stop;
 @ResourceType(name = "managedResA")
 public class ManagedA {
 
+	@ContextResource(name = "awsCredentials")
+	private AWSCredObj awsCreds;
+	
 	@ContextResource
 	private ManagedResourceObj resourceObj;
 	
